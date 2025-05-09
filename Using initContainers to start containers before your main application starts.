@@ -1,0 +1,51 @@
+In this example, the init container init-myservice tries to reach another service. Once it completes, the main container is started.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - name: myapp-container
+    image: busybox
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:
+  - name: init-myservice
+    image: busybox
+    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+
+Note the commands:
+1.  ['sh', '-c', 'echo The app is running! && sleep 3600']
+This command runs a shell with a specific command string.
+
+Breakdown:
+- sh: Invokes the Bourne shell.
+- -c: Specifies that the command is a string.
+- The command string:
+    - echo The app is running!: Prints the message "The app is running!" to the console.
+    - &&: Logical AND operator. The command after && will only run if the previous command (echo) is successful.
+    - sleep 3600: Pauses the execution for 3600 seconds (1 hour).
+
+Effect:
+1. Prints "The app is running!" to the console.
+2. Waits for 1 hour before exiting.
+
+2.  ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+This command waits for a service named myservice to become resolvable via DNS.
+
+Breakdown:
+- sh: Invokes the Bourne shell.
+- -c: Specifies that the command is a string.
+- The command string:
+    - until nslookup myservice; do: Runs nslookup myservice and checks its exit status. If it fails (i.e., myservice is not resolvable), the loop continues.
+    - echo waiting for myservice: Prints a message indicating that the service is not yet available.
+    - sleep 2: Waits for 2 seconds before retrying.
+    - done;: Ends the loop when nslookup myservice is successful.
+
+Effect:
+1. Continuously checks if myservice is resolvable via DNS.
+2. Prints "waiting for myservice" every 2 seconds until myservice becomes available.
+
+This command is often used in Docker containers or Kubernetes pods to wait for dependent services to become available before starting the main application.
